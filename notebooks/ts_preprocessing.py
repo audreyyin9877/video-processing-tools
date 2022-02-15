@@ -21,10 +21,10 @@ import cv2
 from matplotlib import pyplot as plt
 
 # specify location of the datafiles
-dir_fp = r'C:\Users\ay2376\Desktop\T01\_renamed'
+dirFp = r'C:\Users\ay2376\Desktop\T01\_renamed'
 
 # specify basename basename_extentions
-basename_extensions = {
+basenameExtensions = {
     'video': '.avi',
     'arduino_ts': 'ard_ts_raw.csv',
     'bonsai_ts': 'vid_ts_raw.csv'
@@ -163,6 +163,6 @@ def check_datafile_complete(
             print("All data complete.")
 
 if __name__ == '__main__':
-    abspath_list = get_datafiles(dir_fp, basename_extensions)
+    abspath_list = get_datafiles(dirFp, basenameExtensions)
     dict = create_path_dict(abspath_list)
     check_datafile_complete(dict)
