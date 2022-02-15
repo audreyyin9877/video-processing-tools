@@ -12,6 +12,7 @@
 import pandas as pd
 import numpy as np
 import regex as re
+import pprint
 import os # can also us os.system to call for ffmpeg
 import sys
 import csv
@@ -65,6 +66,51 @@ def get_datafiles(
     # Return list of abs paths
     return abspath_list
 
+def create_path_dict (
+    abspath_list: list
+) -> dict:
+    """ Create a dict with absolute filepaths for cs extraction.
+
+    Parameters
+    ----------
+    abspath_list (list): List with all absolute paths for arduino, bonsai, and video datafiles
+
+    Returns
+    ----------
+    fp_dict (dict): Dictionary with all filepaths aggregated.
+        KEY = animal_id
+        VALUE = list of arduino, bonsai, and video datafiles
+    """
+
+    # Make sure data format is correct and that the filepath exists
+    for file in abspath_list:
+        basename_tuple = ('_vid_ts_raw.csv', '_ard_ts_raw.csv', '.avi')
+        print("Verifying filepath for", file, "...")
+        assert file.endswith(basename_tuple), "File has an incorrect extension. Expected .csv or .avi"
+        assert os.path.exists(file), "Filepath does not exist. Verify the absolute filepath"
+
+    print("All filepaths are valid.")
+
+    # Instantiate a dictionary
+    fp_dict = {}
+
+    # Fill dictionary with "animal_id:list of filepaths" pairs
+    for file in abspath_list:
+        # Extract animal ids from filepath name
+        animal_id = re.search(r'_(\d{6})_', file)
+
+        # Match animal id with corresponding csv and avi files
+        bon_csv = [file for file in abspath_list
+                   if file.endswith('_vid_ts_raw.csv') and animal_id.group() in file]
+        ard_csv = [file for file in abspath_list
+                   if file.endswith('_ard_ts_raw.csv') and animal_id.group() in file]
+        vid_fp = [file for file in abspath_list
+                  if file.endswith('.avi') and animal_id.group() in file]
+
+        fp_dict[animal_id.group().replace('_', "")] = [''.join(bon_csv), ''.join(ard_csv), ''.join(vid_fp)]
+
+    return fp_dict
+
 if __name__ == '__main__':
-    list = get_datafiles(dir_fp, basename_extensions)
-    print(list)
+    abspath_list = get_datafiles(dir_fp, basename_extensions)
+    dict = create_path_dict(abspath_list)
