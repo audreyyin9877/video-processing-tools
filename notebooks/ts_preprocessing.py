@@ -7,3 +7,14 @@
 # Last Modified Date:
 # Last Modified By:
 ################################################################################
+
+#import modules
+import pandas as pd
+import numpy as np
+import regex as re
+import os # can also us os.system to call for ffmpeg
+import sys
+import csv
+import ffmpeg # can also use ffmpy, python wrapper for ffmpeg
+import cv2
+from matplotlib import pyplot as plt
