@@ -114,7 +114,10 @@ def create_path_dict (
 def check_datafile_complete(
     fp_dict: dict
 ):
-    """Remove any empty strings. Check to see if each animal_id keys have a list containing three datafiles
+    """Check to see if datafiles are complete and usable. Includes:
+        - Removing any empty strings in fp_dict
+        - Checking to see if each animal_id key has three datafiles (2 .csv, 1 .avi)
+        - Checking to see if ard_csv is complete
 
     Parameters
     ----------
@@ -126,19 +129,38 @@ def check_datafile_complete(
     ----------
     prints string with error message, if existing
     """
+
+    # Print message to user
+    print();
+    print("Checking if data is complete...")
+
     # Remove any empty strings within the dictionary
     for key in fp_dict:
         while "" in fp_dict[key]:
             fp_dict[key].remove("")
 
-    # Ensure that each animal_id has three datafiles
-    try:
-        for key in fp_dict:
+    for key in fp_dict:
+        try:
+            # Ensure that each animal_id has three datafiles
             check_datafiles = len(fp_dict[key])
             assert(check_datafiles == 3)
-    except AssertionError:
-        print(key, "is missing a datafile.")
-        pprint.pprint(fp_dict[key])
+
+            # Ensure that all of arduino csv is complete
+            log_data = pd.read_csv(fp_dict[key][1], names=['log', 'timestamp'])
+            session_end_pat = 'SESSION > END'
+            if session_end_pat in log_data.values:
+                pass
+            else:
+                raise ValueError()
+        except AssertionError:
+            print(key, "is missing a datafile.")
+            pprint.pprint(fp_dict[key])
+            continue
+        except ValueError:
+            print("WARNING > FILE ERROR. Please verify content of arduino files for", key)
+            continue
+        else:
+            print("All data complete.")
 
 if __name__ == '__main__':
     abspath_list = get_datafiles(dir_fp, basename_extensions)
