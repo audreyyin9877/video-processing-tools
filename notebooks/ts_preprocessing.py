@@ -111,6 +111,36 @@ def create_path_dict (
 
     return fp_dict
 
+def check_datafile_complete(
+    fp_dict: dict
+):
+    """Remove any empty strings. Check to see if each animal_id keys have a list containing three datafiles
+
+    Parameters
+    ----------
+    fp_dict (dict): Dictionary with all filepaths necessary for preprocessing csvs
+        KEY = animal_id
+        VALUE = list of arduino, bonsai, and video datafiles
+
+    Returns
+    ----------
+    prints string with error message, if existing
+    """
+    # Remove any empty strings within the dictionary
+    for key in fp_dict:
+        while "" in fp_dict[key]:
+            fp_dict[key].remove("")
+
+    # Ensure that each animal_id has three datafiles
+    try:
+        for key in fp_dict:
+            check_datafiles = len(fp_dict[key])
+            assert(check_datafiles == 3)
+    except AssertionError:
+        print(key, "is missing a datafile.")
+        pprint.pprint(fp_dict[key])
+
 if __name__ == '__main__':
     abspath_list = get_datafiles(dir_fp, basename_extensions)
     dict = create_path_dict(abspath_list)
+    check_datafile_complete(dict)
