@@ -162,6 +162,23 @@ def check_datafile_complete(
         else:
             print("All data complete.")
 
+def preprocess_csv(
+    fp_dict: dict
+):
+    """ Load csv files into dataframes and preprocess timestamps
+
+    Parameters
+    ----------
+    fp_dict (dict): Dictionary with all filepaths necessary for preprocessing csvs
+        KEY = animal_id
+        VALUE = list of arduino, bonsai, and video datafiles
+
+    Returns
+    ----------
+    df_bon (pandas.DataFrame): timestamps of each video frame
+    df_ard (pandas.DataFrame): timestamps of each arduino serial output
+    """
+
 if __name__ == '__main__':
     abspath_list = get_datafiles(dirFp, basenameExtensions)
     dict = create_path_dict(abspath_list)
