@@ -21,7 +21,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 # specify location of the datafiles
-dirFp = r'C:\Users\ay2376\Desktop\T01\_renamed'
+dirFp = r'/Users/audreyyin/Desktop/sample/complete'
 
 # specify basename basename_extentions
 basenameExtensions = {
@@ -155,12 +155,21 @@ def check_datafile_complete(
         except AssertionError:
             print(key, "is missing a datafile.")
             pprint.pprint(fp_dict[key])
-            continue
+            raise
         except ValueError:
             print("WARNING > FILE ERROR. Please verify content of arduino files for", key)
-            continue
-        else:
-            print("All data complete.")
+            ignore = input('Would you like to continue? [y/n]: ')
+            check = 0
+            while check == 0:
+                if ignore == 'y':
+                    check = 1
+                    continue
+                elif ignore == 'n':
+                    check = 1
+                    raise
+                else:
+                    ignore = input('Invalid input. Would you like to continue? [y/n]: ')
+    print("All data complete.")
 
 def preprocess_csv(
     fp_dict: dict
