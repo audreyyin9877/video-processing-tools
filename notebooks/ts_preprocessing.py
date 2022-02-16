@@ -197,12 +197,11 @@ def load_csv(
     # instantiate a dictionary
     data_dict = {}
 
-    # doc
+    # create and fill data_dict with dataframes from csv
     for key in fp_dict:
         # create arduino df from csv. Make timestamps datetime objects and set timestamps to index
         df_ard = pd.read_csv(fp_dict[key][1], names=['ard_output', 'timestamp'], date_parser='timestamp')
         df_ard.timestamp = pd.to_datetime(df_ard.timestamp)
-        df_ard.set_index('timestamp', inplace=True)
 
         # create bonsai df from csv. Make timestamps datetime objects and set timestamps to index
         df_bon = pd.read_csv(fp_dict[key][0], names=['timestamp'], date_parser='timestamp')
@@ -219,17 +218,67 @@ def extract_cs_timestamps(
 
     Parameters
     ----------
-    df_dict (dict): Dictionary of dataframes from bonsai and arduino csvs
+    data_dict (dict): Dictionary of dataframes from bonsai and arduino csvs
         KEY = animal_id
         VALUE = list of df_bon and df_ard
 
     Returns
     ----------
-
+    df_cs (pandas.DataFrame): Dataframe containing columns:
+        animal_id (str)
+        cs_id (str): Trial 1, Trial 2, etc
+        ts_start (DateTime): timestamp when a trial begins
+        ts_end (DateTime): timestamp when trial ends
     """
+
+    # instantiate empty lists. Appending list data is cheaper and requires less memory than appending dataframes
+    animal_id = []
+    cs_id = []
+    ts_start = []
+    ts_end = []
+
+    # for each animal id, extract out id, timestamps, and trial id
+    for key in data_dict:
+        # pull df_ard out of dictionary
+        df_ard = data_dict[key][1]
+
+        # find animal_id
+        animal_id.append(key)
+
+        # find timestamps when CS > ON using regex
+        cond = df_ard['ard_output'].str.contains('(CS > ON)')
+        df_ts_start = df_ard[cond].drop(['ard_output'], axis=1)
+        ts_start.append(df_ts_start['timestamp'].tolist())
+
+        # find cs_id if CS was on. This prevents recording failed trials where no motion was detected
+        extend_index = []
+        index_ts_start = df_ts_start.index.tolist()
+        for index in index_ts_start:
+            above_one = index - 1
+            above_two = index - 2
+            extend_index.extend([above_one, above_two])
+        index_ts_start.extend(extend_index)
+        # create dataframe with trials only when CS occured. Find cs_id using regex
+        df_search = df_ard.loc[index_ts_start].sort_index()
+        cond = df_search['ard_output'].str.contains('(TRIAL NUMBER)')
+        df_cs_id = df_search[cond]
+        df_cs_id['ard_output'] = df_cs_id['ard_output'].str.replace(' NUMBER', '').map(lambda x: x.rstrip(' > START'))
+        cs_id.append(df_cs_id['ard_output'].tolist())
+
+        # find timestamps when CS > OFF using regex
+        cond = df_ard['ard_output'].str.contains('(CS > OFF)')
+        df_ts_end = df_ard[cond].reset_index().drop(['ard_output'], axis=1)
+        ts_end.append(df_ts_end['timestamp'].tolist())
+
+    # create final dataframe from lists
+    df_cs = pd.DataFrame(zip(animal_id, cs_id, ts_start, ts_end), columns=['animal_id', 'cs_id', 'ts_start', 'ts_end'])
+    df_cs = df_cs.set_index(['animal_id']).apply(pd.Series.explode).reset_index()
+
+    return df_cs
 
 if __name__ == '__main__':
     pathList = get_datafiles(dirFp, basenameExtensions)
     filepathDict = create_path_dict(pathList)
     check_datafile_complete(filepathDict)
     dataDict = load_csv(filepathDict)
+    dfMaster = extract_cs_timestamps(dataDict)
