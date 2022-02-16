@@ -213,7 +213,7 @@ def load_csv(
 
 def extract_cs_timestamps(
     data_dict: dict
-):
+) -> pd.DataFrame:
     """ Extracts and saves the timestamps when a CS occurs
 
     Parameters
@@ -276,9 +276,68 @@ def extract_cs_timestamps(
 
     return df_cs
 
+def extract_acclimation_timestamps(
+    data_dict: dict,
+    df_cs: pd.DataFrame
+) -> pd.DataFrame:
+    """ Extracts and saves the timestamps during acclimation period. Adds to existing master dataframe (dfMaster)
+
+    Parameters
+    ----------
+    data_dict (dict): Dictionary of dataframes from bonsai and arduino csvs
+        KEY = animal_id
+        VALUE = list of df_bon and df_ard
+    df_cs (pandas.Dataframe): Dataframe containing columns:
+        animal_id (str)
+        cs_id (str): Trial 1, Trial 2, etc
+        ts_start (DateTime): timestamp when a trial begins
+        ts_end (DateTime): timestamp when trial ends
+
+    Returns
+    ----------
+    df_cs (pandas.DataFrame): see above
+    """
+
+    # instantiate empty lists. Appending list data is cheaper and requires less memory than appending dataframes
+    animal_id = []
+    cs_id = []
+    ts_start = []
+    ts_end = []
+
+    # for each animal id, extract out id, timestamps, and trial id
+    for key in data_dict:
+        # pull df_ard out of dictionary
+        df_ard = data_dict[key][1]
+
+        # find animal_id
+        animal_id.append(key)
+
+        # give cs_id
+        cs_id.append('ACCLIMATION')
+
+        # find timestamps when acclimation begins using regex
+        cond = df_ard['ard_output'].str.contains('(ACCLIMATION)')
+        df_ts_start = df_ard[cond].drop(['ard_output'], axis=1)
+        ts_start.append(df_ts_start['timestamp'].tolist())
+
+        # find timestamps when acclimation ends using regex
+        cond = df_ard['ard_output'].str.contains('(TRIAL NUMBER 1 > START)')
+        df_ts_end = df_ard[cond].reset_index().drop(['ard_output'], axis=1)
+        ts_end.append(df_ts_end['timestamp'].tolist())
+
+    # create dataframe for acclimation periods and place into a holder
+    df_holder = pd.DataFrame(zip(animal_id, cs_id, ts_start, ts_end), columns=['animal_id', 'cs_id', 'ts_start', 'ts_end'])
+    df_holder = df_holder.set_index(['animal_id']).apply(pd.Series.explode).reset_index()
+
+    # join master dataframe with acclimation periods dataframe
+    df_cs = pd.concat([df_holder, df_cs], ignore_index=True)
+
+    return df_cs
+
 if __name__ == '__main__':
     pathList = get_datafiles(dirFp, basenameExtensions)
     filepathDict = create_path_dict(pathList)
     check_datafile_complete(filepathDict)
     dataDict = load_csv(filepathDict)
     dfMaster = extract_cs_timestamps(dataDict)
+    dfMaster = extract_acclimation_timestamps(dataDict, dfMaster)
