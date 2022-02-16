@@ -174,7 +174,7 @@ def check_datafile_complete(
                     ignore = input('Invalid input. Would you like to continue? [y/n]: ')
     print("All data complete.")
 
-def preprocess_csv(
+def load_csv(
     fp_dict: dict
 ) -> dict:
     """ Load csv files into dataframes and preprocess timestamps
@@ -187,14 +187,49 @@ def preprocess_csv(
 
     Returns
     ----------
-    df_dict (dict): Dictionary with all csv data saved as a dataframe
+    data_dict (dict): Dictionary with all csv data saved as a dataframe
         KEY = animal_id
         VALUE = list of df_bon and df_ard
             df_bon (pandas.DataFrame): timestamps of each video frame
             df_ard (pandas.DataFrame): timestamps of each arduino serial output
     """
 
+    # instantiate a dictionary
+    data_dict = {}
+
+    # doc
+    for key in fp_dict:
+        # create arduino df from csv. Make timestamps datetime objects and set timestamps to index
+        df_ard = pd.read_csv(fp_dict[key][1], names=['ard_output', 'timestamp'], date_parser='timestamp')
+        df_ard.timestamp = pd.to_datetime(df_ard.timestamp)
+        df_ard.set_index('timestamp', inplace=True)
+
+        # create bonsai df from csv. Make timestamps datetime objects and set timestamps to index
+        df_bon = pd.read_csv(fp_dict[key][0], names=['timestamp'], date_parser='timestamp')
+        df_bon = df_bon.reset_index().set_index('timestamp', drop=True)
+
+        data_dict[key] = [df_bon, df_ard]
+
+    return data_dict
+
+def extract_cs_timestamps(
+    data_dict: dict
+):
+    """ Extracts and saves the timestamps when a CS occurs
+
+    Parameters
+    ----------
+    df_dict (dict): Dictionary of dataframes from bonsai and arduino csvs
+        KEY = animal_id
+        VALUE = list of df_bon and df_ard
+
+    Returns
+    ----------
+
+    """
+
 if __name__ == '__main__':
-    abspath_list = get_datafiles(dirFp, basenameExtensions)
-    dict = create_path_dict(abspath_list)
-    check_datafile_complete(dict)
+    pathList = get_datafiles(dirFp, basenameExtensions)
+    filepathDict = create_path_dict(pathList)
+    check_datafile_complete(filepathDict)
+    dataDict = load_csv(filepathDict)
