@@ -77,9 +77,12 @@ def create_path_dict (
 
     Returns
     ----------
-    fp_dict (dict): Dictionary with all filepaths aggregated.
+    fp_dict (dict): Dictionary with all filepaths necessary for preprocessing csvs
         KEY = animal_id
-        VALUE = list of arduino, bonsai, and video datafiles
+        VALUE = list of bon_csv, ard_csv, vid_fp
+            bon_csv = filepath for bonsai csv
+            ard_csv = filepath for ard_csv
+            vid_fp = filepath for avi
     """
 
     # Make sure data format is correct and that the filepath exists
@@ -123,7 +126,7 @@ def check_datafile_complete(
     ----------
     fp_dict (dict): Dictionary with all filepaths necessary for preprocessing csvs
         KEY = animal_id
-        VALUE = list of arduino, bonsai, and video datafiles
+        VALUE = list of bonsai, arduino, and video data filepaths
 
     Returns
     ----------
@@ -173,19 +176,22 @@ def check_datafile_complete(
 
 def preprocess_csv(
     fp_dict: dict
-):
+) -> dict:
     """ Load csv files into dataframes and preprocess timestamps
 
     Parameters
     ----------
     fp_dict (dict): Dictionary with all filepaths necessary for preprocessing csvs
         KEY = animal_id
-        VALUE = list of arduino, bonsai, and video datafiles
+        VALUE = list of bonsai, arduino, and video data filpaths
 
     Returns
     ----------
-    df_bon (pandas.DataFrame): timestamps of each video frame
-    df_ard (pandas.DataFrame): timestamps of each arduino serial output
+    df_dict (dict): Dictionary with all csv data saved as a dataframe
+        KEY = animal_id
+        VALUE = list of df_bon and df_ard
+            df_bon (pandas.DataFrame): timestamps of each video frame
+            df_ard (pandas.DataFrame): timestamps of each arduino serial output
     """
 
 if __name__ == '__main__':
