@@ -2,6 +2,7 @@
 # Filename: ts_preprocessing.py
 # Description: Preprocessing bonsai, arduino, and video datafiles to extract cs
 #              timestamps and frame indexes, and to calculate framerate
+# Outputs: cs__timestamps.csv, frame_rate.csv
 # Author: Audrey Yin, ay2376@nyu.edu
 # Created On: 2022-02-15 10:57:54
 # Last Modified Date: 2022-02-17 16:02:02
