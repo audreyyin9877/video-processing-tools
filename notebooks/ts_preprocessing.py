@@ -12,13 +12,9 @@
 import pandas as pd
 import numpy as np
 import regex as re
-import pprint
 import os # can also us os.system to call for ffmpeg
 import sys
 import csv
-import ffmpeg # can also use ffmpy, python wrapper for ffmpeg
-import cv2
-from matplotlib import pyplot as plt
 
 # specify location of the datafiles
 dirFp = r'/Volumes/My Passport/LeDoux/EXP003/T01/SAC1'
