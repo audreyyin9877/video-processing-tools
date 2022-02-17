@@ -205,6 +205,7 @@ def load_csv(
 
         # create bonsai df from csv. Make timestamps datetime objects and set timestamps to index
         df_bon = pd.read_csv(fp_dict[key][0], names=['timestamp'], date_parser='timestamp')
+        df_bon.timestamp = pd.to_datetime(df_bon.timestamp)
         df_bon = df_bon.reset_index().set_index('timestamp', drop=True)
 
         data_dict[key] = [df_bon, df_ard]
@@ -334,6 +335,64 @@ def extract_acclimation_timestamps(
 
     return df_cs
 
+def get_frame_idx (
+    data_dict: dict,
+    df_cs: pd.DataFrame
+) -> pd.DataFrame:
+    """ Extract frame index from df_bon using ts_start and ts_end. Add to df_cs
+
+    Parameters
+    ----------
+    data_dict (dict): Dictionary of dataframes from bonsai and arduino csvs
+        KEY = animal_id
+        VALUE = list of df_bon and df_ard
+    df_cs (pandas.Dataframe): Dataframe containing columns:
+        animal_id (str)
+        cs_id (str): Trial 1, Trial 2, etc
+        ts_start (DateTime): timestamp when a trial begins
+        ts_end (DateTime): timestamp when trial ends
+
+    Returns
+    ----------
+    df_cs (pandas.DataFrame): Dataframe containing new columns:
+        frame_start (): frame index for ts_start
+        frame_end (): frame index for ts_end
+    """
+
+    # create empty holder column to fill frame_start indices
+    df_cs['holder'] = np.nan
+
+    # for each animal, extract out the frame_start index
+    for key in data_dict:
+        # pull df_bon out of dictionary
+        df_bon = data_dict[key][0]
+
+        # iterate through the master dataframe to access ts_start and match to df_bon timestamps
+        for i, row in enumerate(df_cs.itertuples(), 0):
+            if key == row.animal_id:
+                idx = df_bon.index.get_loc(row.ts_start, method='nearest')
+                df_cs.loc[i, row.holder] = idx
+
+    # BUG: When trying to fill holder column, indices seem to only fill column next. This is a cheap workaround... :(
+    df_cs = df_cs.drop(['holder'], axis=1)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_start'], axis=1, inplace=False)
+
+    # repeated code to find frame_end
+    df_cs['holder'] = np.nan
+    for key in data_dict:
+        # pull df_bon out of dictionary
+        df_bon = data_dict[key][0]
+
+        for i, row in enumerate(df_cs.itertuples(), 0):
+            if key == row.animal_id:
+                idx = df_bon.index.get_loc(row.ts_end, method='nearest')
+                df_cs.loc[i, row.holder] = idx
+
+    df_cs = df_cs.drop(['holder'], axis=1)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_end'], axis=1, inplace=False)
+
+    return df_cs
+
 if __name__ == '__main__':
     pathList = get_datafiles(dirFp, basenameExtensions)
     filepathDict = create_path_dict(pathList)
@@ -341,3 +400,4 @@ if __name__ == '__main__':
     dataDict = load_csv(filepathDict)
     dfMaster = extract_cs_timestamps(dataDict)
     dfMaster = extract_acclimation_timestamps(dataDict, dfMaster)
+    dfMaster = get_frame_idx(dataDict, dfMaster)
