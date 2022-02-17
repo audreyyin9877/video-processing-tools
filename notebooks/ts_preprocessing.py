@@ -425,6 +425,10 @@ def calculate_frame_rate(
         std_framerate (float): standard deviation rounded to two decimals
     """
 
+    # print message to user
+    print()
+    print('Calculating frame rates...')
+
     # instantiate empty lists. Appending list data is cheaper and requires less memory than appending dataframes
     frame_rate = []
 
@@ -457,6 +461,9 @@ def calculate_frame_rate(
         # create a list for each animal_id and calculated mean + std
         frame_rate.append([key, mean, std])
 
+    # print message to user
+    print('Calculating frame rates done. ')
+
     # create dataframe from frame_rate (nested list)
     df_framerate = pd.DataFrame(frame_rate, columns=['animal_id', 'mean_framerate', 'std_framerate'])
     return df_framerate
@@ -474,7 +481,10 @@ def save_data(
     df_cs (pd.DataFrame): Info of animal id, trial id, timestamps, frame indices
     df_framerate (pd.DataFrame): Info on video frame rate
     """
-    pd.set_option("display.max_rows", None, "display.max_columns", None)
+
+    # print message to user
+    print()
+    print('Saving data to original filepath...')
 
     # sort master dataframe by animal_id and cs_id
     df_cs['animal_id'] = df_cs['animal_id'].astype(int)
