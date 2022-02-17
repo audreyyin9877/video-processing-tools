@@ -267,7 +267,8 @@ def extract_cs_timestamps(
         df_search = df_ard.loc[index_ts_start].sort_index()
         cond = df_search['ard_output'].str.contains('(TRIAL NUMBER)')
         df_cs_id = df_search[cond]
-        df_cs_id['ard_output'] = df_cs_id['ard_output'].str.replace(' NUMBER', '').map(lambda x: x.rstrip(' > START'))
+        df_cs_id['ard_output'] = df_cs_id['ard_output'].map(lambda x: x.lstrip('TRIAL NUMBER ').rstrip(' > START'))
+        df_cs_id['ard_output'] = df_cs_id['ard_output'].map(lambda x: 'TRIAL '+x if (len(x)==2) else 'TRIAL 0'+x)
         cs_id.append(df_cs_id['ard_output'].tolist())
 
         # find timestamps when CS > OFF using regex
@@ -418,7 +419,7 @@ def calculate_frame_rate(
 
     Returns
     ----------
-    frame_rate_df (pd.DataFrame): Contains information on
+    df_framerate (pd.DataFrame): Contains information on
         animal_id (str)
         mean_framerate (float): mean rounded to two decimals
         std_framerate (float): standard deviation rounded to two decimals
@@ -457,15 +458,56 @@ def calculate_frame_rate(
         frame_rate.append([key, mean, std])
 
     # create dataframe from frame_rate (nested list)
-    frame_rate_df = pd.DataFrame(frame_rate, columns=['animal_id', 'mean_framerate', 'std_framerate'])
-    return frame_rate_df
+    df_framerate = pd.DataFrame(frame_rate, columns=['animal_id', 'mean_framerate', 'std_framerate'])
+    return df_framerate
+
+def save_data(
+    dir_fp: str,
+    df_cs: pd.DataFrame,
+    df_framerate: pd.DataFrame
+):
+    """Save a csv file with df_cs and df_framerate
+
+    Parameters
+    ----------
+    dir_fp (str): Absolute path to the directory containing datafiles
+    df_cs (pd.DataFrame): Info of animal id, trial id, timestamps, frame indices
+    df_framerate (pd.DataFrame): Info on video frame rate
+    """
+    pd.set_option("display.max_rows", None, "display.max_columns", None)
+
+    # sort master dataframe by animal_id and cs_id
+    df_cs['animal_id'] = df_cs['animal_id'].astype(int)
+    df_cs = df_cs.sort_values(['animal_id', 'cs_id']).reset_index(drop=True)
+
+    # save master dataframe as a csv
+    cs = os.path.join(dir_fp, 'cs_timestamps.csv')
+    df_cs.to_csv(cs)
+    print('CS timestamps and frames info saved at: ', cs)
+
+    # sort framerate dataframe by animal_id
+    df_framerate = df_framerate.sort_values('animal_id').reset_index(drop=True)
+
+    # save framerate dataframe as a csv
+    framerate = os.path.join(dir_fp, 'frame_rate.csv')
+    df_framerate.to_csv(framerate)
+    print('Frame rate info saved at:', framerate)
+
 
 if __name__ == '__main__':
+    # Grab raw data
     pathList = get_datafiles(dirFp, basenameExtensions)
     filepathDict = create_path_dict(pathList)
     check_datafile_complete(filepathDict)
     dataDict = load_csv(filepathDict)
+
+    # Transform and extract timestamp data
     dfMaster = extract_cs_timestamps(dataDict)
     dfMaster = extract_acclimation_timestamps(dataDict, dfMaster)
     dfMaster = get_frame_idx(dataDict, dfMaster)
+
+    # Extract metadeta on videos
     dfFrameRate = calculate_frame_rate(filepathDict)
+
+    # Save data
+    save_data(dirFp, dfMaster, dfFrameRate)
