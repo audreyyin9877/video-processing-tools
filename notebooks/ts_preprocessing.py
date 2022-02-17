@@ -1,11 +1,11 @@
 ################################################################################
 # Filename: ts_preprocessing.py
 # Description: Preprocessing bonsai, arduino, and video datafiles to extract cs
-#              ttls and calculate framerate
+#              timestamps and frame indexes, and to calculate framerate
 # Author: Audrey Yin, ay2376@nyu.edu
 # Created On: 2022-02-15 10:57:54
-# Last Modified Date:
-# Last Modified By:
+# Last Modified Date: 2022-02-17 16:02:02
+# Last Modified By: Audrey Yin
 ################################################################################
 
 #import modules
@@ -21,7 +21,7 @@ import cv2
 from matplotlib import pyplot as plt
 
 # specify location of the datafiles
-dirFp = r'/Users/audreyyin/Desktop/sample/complete'
+dirFp = r'/Volumes/My Passport/LeDoux/EXP003/T01/SAC1'
 
 # specify basename basename_extentions
 basenameExtensions = {
