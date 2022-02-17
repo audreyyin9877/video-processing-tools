@@ -232,6 +232,10 @@ def extract_cs_timestamps(
         ts_end (DateTime): timestamp when trial ends
     """
 
+    # print message to user
+    print()
+    print('Merging arduino and bonsai timestamps...')
+
     # instantiate empty lists. Appending list data is cheaper and requires less memory than appending dataframes
     animal_id = []
     cs_id = []
@@ -333,6 +337,9 @@ def extract_acclimation_timestamps(
     # join master dataframe with acclimation periods dataframe
     df_cs = pd.concat([df_holder, df_cs], ignore_index=True)
 
+    # print message to user
+    print('Merging timestamps done.')
+
     return df_cs
 
 def get_frame_idx (
@@ -358,6 +365,10 @@ def get_frame_idx (
         frame_start (): frame index for ts_start
         frame_end (): frame index for ts_end
     """
+
+    # print message to user
+    print()
+    print('Extracting video frame indices...')
 
     # create empty holder column to fill frame_start indices
     df_cs['holder'] = np.nan
@@ -390,6 +401,9 @@ def get_frame_idx (
 
     df_cs = df_cs.drop(['holder'], axis=1)
     df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_end'], axis=1, inplace=False)
+
+    # print message to user
+    print('Extracting indices done. ')
 
     return df_cs
 
