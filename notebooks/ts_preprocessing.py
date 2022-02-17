@@ -407,6 +407,59 @@ def get_frame_idx (
 
     return df_cs
 
+def calculate_frame_rate(
+    fp_dict: dict
+) -> pd.DataFrame:
+    """Calculate frame rate based on timestamp information
+
+    Parameters
+    ----------
+    fp_dict (dict): Dictionary containing filepaths for the timestamp csv
+
+    Returns
+    ----------
+    frame_rate_df (pd.DataFrame): Contains information on
+        animal_id (str)
+        mean_framerate (float): mean rounded to two decimals
+        std_framerate (float): standard deviation rounded to two decimals
+    """
+
+    # instantiate empty lists. Appending list data is cheaper and requires less memory than appending dataframes
+    frame_rate = []
+
+    # for every animal id, find the frame rate mean and std of their corresponding video
+    for key in fp_dict:
+        # read video timestamp csv and turn into dataframe
+        bon_csv = fp_dict[key][0]
+        df = pd.read_csv(bon_csv, names = ['timestamp'], parse_dates = True)
+
+        # transform timestamps into timedelta objects represented in seconds
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc = False)
+        df['timestamp'] = pd.to_timedelta(df['timestamp'].dt.strftime('%H:%M:%S')).dt.total_seconds().astype(int)
+
+        # create a timedelta with the first timestamp
+        df["net_timestamp"] = df["timestamp"] - df["timestamp"][0]
+
+        # create a column of ones for each frame. Used to count total number of frames in each second
+        df["frames_count"] = np.ones(len(df))
+
+        # group timestamps together (== one second) and sum all frames in each grouped second
+        df_1 = df.groupby("timestamp").sum().reset_index()
+
+        # remove first and last elements. these are incomplete "seconds" and contain unreliable framerate measurements
+        df_1.drop(index=[df_1.index.max(), df_1.index.min()], inplace=True)
+
+        # calculate average frame rate and std
+        mean = round(df_1['frames_count'].mean(), 2)
+        std = round(df_1['frames_count'].std(), 2)
+
+        # create a list for each animal_id and calculated mean + std
+        frame_rate.append([key, mean, std])
+
+    # create dataframe from frame_rate (nested list)
+    frame_rate_df = pd.DataFrame(frame_rate, columns=['animal_id', 'mean_framerate', 'std_framerate'])
+    return frame_rate_df
+
 if __name__ == '__main__':
     pathList = get_datafiles(dirFp, basenameExtensions)
     filepathDict = create_path_dict(pathList)
@@ -415,3 +468,4 @@ if __name__ == '__main__':
     dfMaster = extract_cs_timestamps(dataDict)
     dfMaster = extract_acclimation_timestamps(dataDict, dfMaster)
     dfMaster = get_frame_idx(dataDict, dfMaster)
+    dfFrameRate = calculate_frame_rate(filepathDict)
