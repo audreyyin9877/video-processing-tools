@@ -12,16 +12,42 @@
 import pandas as pd
 import numpy as np
 import os
+import glob
 import sys
 import csv
 import ffmpeg
 import cv2
+from os import listdir
 
 # specify location of the datafiles
 dirFp = r'/Volumes/My Passport/LeDoux/EXP003/T01/SAC1'
 
-def load_csv(
+def get_datafiles(
     dir_fp: str,
+    suffix = '.avi'
+):
+    """ Returns abs filepath for video files in a directory
+
+    Parameters
+    ----------
+    dir_fp (str): Absolute path to the directory containing datafiles
+
+    Returns
+    ----------
+    video_paths (list): List with all absolute paths for video datafiles
+    """
+
+    # Make sure path is valid
+    assert os.path.isdir(dir_fp), "The path provided does not point to a directory."
+
+    # Grab absolute filepaths of .avi videos
+    filenames = listdir(dir_fp)
+    video_paths = [os.path.abspath(filename) for filename in filenames if filename.endswith(suffix)]
+
+    return video_paths
+
+def load_csv(
+    dir_fp: str
 ):
     """ Load csv files into dataframes and preprocess timestamps
 
@@ -34,6 +60,7 @@ def load_csv(
     df_cs (pd.DataFrame): Info of animal id, trial id, timestamps, frame indices
     df_framerate (pd.DataFrame): Info on video frame rate
     """
+
     # Make sure path is valid
     assert os.path.isdir(dir_fp), "The path provided does not point to a directory."
 
@@ -44,4 +71,5 @@ def load_csv(
     return df_cs, df_framerate
 
 if __name__ == '__main__':
+    videoPathList = get_datafiles(dirFp)
     dfMaster, dfFrameRate = load_csv(dirFp)
