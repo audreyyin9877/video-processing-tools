@@ -74,12 +74,47 @@ def load_csv(
     # Pull data from csvs made in ts_preprocessing
     df_cs = pd.read_csv(dirFp+'/cs_timestamps.csv', index_col = 0)
     df_cs['animal_id'] = df_cs['animal_id'].astype(str).apply(lambda x: x.zfill(6))
+    df_cs['frame_start'] = pd.to_datetime(df_cs.frame_start).dt.time
+    df_cs['frame_end'] = pd.to_datetime(df_cs.frame_end).dt.time
     df_framerate = pd.read_csv(dirFp+'/frame_rate.csv', index_col = 0)
     df_framerate['animal_id'] = df_framerate['animal_id'].astype(str).apply(lambda x: x.zfill(6))
 
     return df_cs, df_framerate
 
+def slice_videos(
+    dir_fp: str,
+    video_paths: list,
+    df_cs: pd.DataFrame
+):
+    """
+    """
+    check = []
+    for filename in video_paths:
+        # Find rows where video file id matches dataframe id
+        id = re.search(r'_(\d{6})_', filename).group(0).lstrip('_').rstrip('_')
+        search_id = df_cs.loc[df_cs['animal_id'] == id]
+
+        # Create new directory with to place new sliced videos
+        final_dir = os.path.join(dir_fp, id+'_videos')
+        try:
+            if not os.path.exists(final_dir):
+                raise Exception
+        except:
+            print('"'+id+f'_videos" directory does not exist. Creating dir at {final_dir}')
+            os.mkdir(final_dir)
+        else:
+            print('Directory '+id+'_videos already exists.')
+
+        # slice videos and place in corresponding folder
+        for index, row in enumerate(search_id.itertuples(), 0):
+            file_in = filename
+            file_out = final_dir+'\\'+id+'_'+row[2].replace(' ', '_')+'.avi'
+            print(row[5])
+            print(row[6])
+            ffmpeg_command = 'ffmpeg -ss '+str(row[5])+' -to '+str(row[6])+' -i '+file_in+' -c copy '+file_out
+            os.system(ffmpeg_command)
+
 if __name__ == '__main__':
     videoPathList = get_datafiles(dirFp)
     dfMaster, dfFrameRate = load_csv(dirFp)
-    # slice_videos(dirFp, videoPathList, dfMaster)
+    slice_videos(dirFp, videoPathList, dfMaster)
