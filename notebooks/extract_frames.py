@@ -11,6 +11,7 @@
 # import modules
 import pandas as pd
 import numpy as np
+import regex as re
 import os
 import glob
 import sys
@@ -20,7 +21,7 @@ import cv2
 from os import listdir
 
 # specify location of the datafiles
-dirFp = r'/Volumes/My Passport/LeDoux/EXP003/T01/SAC1'
+dirFp = r'F:\LeDoux\EXP003\T01\SAC1'
 
 def get_datafiles(
     dir_fp: str,
@@ -40,9 +41,15 @@ def get_datafiles(
     # Make sure path is valid
     assert os.path.isdir(dir_fp), "The path provided does not point to a directory."
 
+    # Check the contents of the directory
+    dirname, _, basename_list = next(os.walk(dir_fp))
+
+    # Get the absolute paths for the entire content of the directory
+    raw_abspath_list = [os.path.join(dirname, suffix)
+                        for suffix in basename_list]
+
     # Grab absolute filepaths of .avi videos
-    filenames = listdir(dir_fp)
-    video_paths = [os.path.abspath(filename) for filename in filenames if filename.endswith(suffix)]
+    video_paths = [os.path.abspath(file) for file in raw_abspath_list if file.endswith(suffix)]
 
     return video_paths
 
@@ -75,3 +82,4 @@ def load_csv(
 if __name__ == '__main__':
     videoPathList = get_datafiles(dirFp)
     dfMaster, dfFrameRate = load_csv(dirFp)
+    # slice_videos(dirFp, videoPathList, dfMaster)
