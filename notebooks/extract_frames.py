@@ -66,7 +66,9 @@ def load_csv(
 
     # Pull data from csvs made in ts_preprocessing
     df_cs = pd.read_csv(dirFp+'/cs_timestamps.csv', index_col = 0)
+    df_cs['animal_id'] = df_cs['animal_id'].astype(str).apply(lambda x: x.zfill(6))
     df_framerate = pd.read_csv(dirFp+'/frame_rate.csv', index_col = 0)
+    df_framerate['animal_id'] = df_framerate['animal_id'].astype(str).apply(lambda x: x.zfill(6))
 
     return df_cs, df_framerate
 
