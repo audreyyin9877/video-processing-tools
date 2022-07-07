@@ -340,7 +340,7 @@ def extract_acclimation_timestamps(
 
     return df_cs
 
-def get_frame_idx (
+def get_frame_timestamps (
     data_dict: dict,
     df_cs: pd.DataFrame
 ) -> pd.DataFrame:
@@ -366,6 +366,53 @@ def get_frame_idx (
 
     # print message to user
     print()
+    print('Extracting video frame timestamps...')
+
+    # create empty holder column to fill vid_start indices
+    df_cs['holder'] = np.nan
+
+    # for each animal, extract out the vid_start index
+    for key in data_dict:
+        # pull df_bon out of dictionary
+        df_bon = data_dict[key][0]
+
+        # iterate through the master dataframe to access ts_start and match to df_bon timestamps
+        for i, row in enumerate(df_cs.itertuples(), 0):
+            if key == row.animal_id:
+                idx = df_bon.index.get_loc(row.ts_start, method='nearest')
+                df_cs.loc[i, row.holder] = df_bon.index[idx]
+
+    # BUG: When trying to fill holder column, indices seem to only fill column next. This is a cheap workaround... :(
+    df_cs = df_cs.drop(['holder'], axis=1)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'vid_start'], axis=1, inplace=False)
+
+    # repeated code to find vid_end
+    df_cs['holder'] = np.nan
+    for key in data_dict:
+        # pull df_bon out of dictionary
+        df_bon = data_dict[key][0]
+
+        for i, row in enumerate(df_cs.itertuples(), 0):
+            if key == row.animal_id:
+                idx = df_bon.index.get_loc(row.ts_end, method='nearest')
+                df_cs.loc[i, row.holder] = df_bon.index[idx]
+
+    df_cs = df_cs.drop(['holder'], axis=1)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'vid_end'], axis=1, inplace=False)
+
+    # print message to user
+    print('Extracting timestamps done. ')
+
+    return df_cs
+
+def get_frame_idx(
+    data_dict: dict,
+    df_cs: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    """
+    # print message to user
+    print()
     print('Extracting video frame indices...')
 
     # create empty holder column to fill frame_start indices
@@ -379,31 +426,30 @@ def get_frame_idx (
         # iterate through the master dataframe to access ts_start and match to df_bon timestamps
         for i, row in enumerate(df_cs.itertuples(), 0):
             if key == row.animal_id:
-                idx = df_bon.index.get_loc(row.ts_start, method='nearest')
-                df_cs.loc[i, row.holder] = df_bon.index[idx]
+                idx = df_bon.index.get_loc(row.vid_start)
+                df_cs.loc[i, row.holder] = idx
 
     # BUG: When trying to fill holder column, indices seem to only fill column next. This is a cheap workaround... :(
     df_cs = df_cs.drop(['holder'], axis=1)
-    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_start'], axis=1, inplace=False)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'idx_start'], axis=1, inplace=False)
 
-    # repeated code to find frame_end
+    # repeated code to find idx_end
     df_cs['holder'] = np.nan
     for key in data_dict:
-        # pull df_bon out of dictionary
         df_bon = data_dict[key][0]
 
         for i, row in enumerate(df_cs.itertuples(), 0):
             if key == row.animal_id:
-                idx = df_bon.index.get_loc(row.ts_end, method='nearest')
-                df_cs.loc[i, row.holder] = df_bon.index[idx]
+                idx = df_bon.index.get_loc(row.vid_end)
+                df_cs.loc[i, row.holder] = idx
 
     df_cs = df_cs.drop(['holder'], axis=1)
-    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_end'], axis=1, inplace=False)
+    df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'idx_end'], axis=1, inplace=False)
 
     # print message to user
-    print('Extracting indices done. ')
-
+    print('Extracting video frame indices done.')
     return df_cs
+
 
 def calculate_frame_rate(
     fp_dict: dict
@@ -511,6 +557,7 @@ if __name__ == '__main__':
     # Transform and extract timestamp data
     dfMaster = extract_cs_timestamps(dataDict)
     dfMaster = extract_acclimation_timestamps(dataDict, dfMaster)
+    dfMaster = get_frame_timestamps(dataDict, dfMaster)
     dfMaster = get_frame_idx(dataDict, dfMaster)
 
     # Extract metadeta on videos
