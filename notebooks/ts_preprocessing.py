@@ -18,7 +18,7 @@ import sys
 import csv
 
 # specify location of the datafiles
-dirFp = r'F:\LeDoux\EXP003\T01\SAC1'
+dirFp = r'/Users/audreyyin/Documents/LeDoux/Sample Data'
 
 # specify basename basename_extentions
 basenameExtensions = {
@@ -380,7 +380,7 @@ def get_frame_idx (
         for i, row in enumerate(df_cs.itertuples(), 0):
             if key == row.animal_id:
                 idx = df_bon.index.get_loc(row.ts_start, method='nearest')
-                df_cs.loc[i, row.holder] = df_bon.index[idx-20]
+                df_cs.loc[i, row.holder] = df_bon.index[idx]
 
     # BUG: When trying to fill holder column, indices seem to only fill column next. This is a cheap workaround... :(
     df_cs = df_cs.drop(['holder'], axis=1)
@@ -395,7 +395,7 @@ def get_frame_idx (
         for i, row in enumerate(df_cs.itertuples(), 0):
             if key == row.animal_id:
                 idx = df_bon.index.get_loc(row.ts_end, method='nearest')
-                df_cs.loc[i, row.holder] = df_bon.index[idx+20]
+                df_cs.loc[i, row.holder] = df_bon.index[idx]
 
     df_cs = df_cs.drop(['holder'], axis=1)
     df_cs = df_cs.set_axis([*df_cs.columns[:-1], 'frame_end'], axis=1, inplace=False)
